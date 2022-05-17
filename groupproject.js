@@ -57,7 +57,9 @@ const project_base = defs.project_base =
           color: color(.9, .5, .9, 1)
         }
         this.materials.rgb = {shader: tex_phong, ambient: .5, texture: new Texture("assets/rgb.jpg")}
-        this.p = new Particle();
+        this.time_step = 0.001;
+        this.particles = [];
+        this.particles.push(new Particle());
       }
       render_animation( caller )
       {                                                // display():  Called once per frame of animation.  We'll isolate out
@@ -124,12 +126,23 @@ export class Project extends project_base {                                     
     // Call the setup code that we left inside the base class:
     super.render_animation(caller);
     const t = this.t = this.uniforms.animation_time / 1000;
+
     //draw a particle for testing
-    this.p.pos = vec3(0, 0, 0);
-    this.p.vel = vec3(1, 1, 1);
-    this.p.acc = vec3(0, 0, 0);
-    this.p.valid = true;
-    this.p.draw(caller, this.uniforms, this.shapes, this.materials);
+    this.particles[0].pos = vec3(0, 0, 0);
+    this.particles[0].vel = vec3(1, 1, 1);
+    this.particles[0].acc = vec3(0, 0, 0);
+    this.particles[0].valid = true;
+
+
+    let dt = this.dt = Math.min(1/30, this.uniforms.animation_delta_time / 1000);
+    const t_next = this.t_sim + dt;
+    while (this.t_sim < t_next) {
+      for (let i = 0; i < 1; i++) {
+        this.particles[i].update(this.time_step);
+      }
+    }
+
+    this.particles[0].draw(caller, this.uniforms, this.shapes, this.materials);
 
   }
 
