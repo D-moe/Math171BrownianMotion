@@ -87,7 +87,10 @@ const project_base = defs.project_base =
         // the shader when coloring shapes.  See Light's class definition for inputs.
         // const light_position = Mat4.rotation( angle,   1,0,0 ).times( vec4( 0,-1,1,0 ) ); !!!
         // !!! Light changed here
-        const light_position = vec4(20 * Math.cos(angle), 20,  20 * Math.sin(angle), 1.0);
+
+
+        //const light_position = vec4(20 * Math.cos(angle), 20,  20 * Math.sin(angle), 1.0);
+        const light_position = vec4(20, 20,  20, 1.0);
         this.uniforms.lights = [ defs.Phong_Shader.light_source( light_position, color( 1,1,1,1 ), 1000000 ) ];
 
 
@@ -121,6 +124,7 @@ export class Project extends project_base {                                     
     // Call the setup code that we left inside the base class:
     super.render_animation(caller);
     const t = this.t = this.uniforms.animation_time / 1000;
+    //draw a particle for testing
     this.p.pos = vec3(0, 0, 0);
     this.p.vel = vec3(1, 1, 1);
     this.p.acc = vec3(0, 0, 0);
