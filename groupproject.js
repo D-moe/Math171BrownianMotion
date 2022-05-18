@@ -58,8 +58,9 @@ const project_base = defs.project_base =
         }
         this.materials.rgb = {shader: tex_phong, ambient: .5, texture: new Texture("assets/rgb.jpg")}
         this.time_step = 0.001;
+        this.t_sim = 0.0;
         this.particles = [];
-        this.particles.push(new Particle());
+        this.particles.push(new Particle(1,0,0,0,3,1,0,0,0,0, 0, 0, 0,1,0,0,1));
       }
       render_animation( caller )
       {                                                // display():  Called once per frame of animation.  We'll isolate out
@@ -94,10 +95,6 @@ const project_base = defs.project_base =
         //const light_position = vec4(20 * Math.cos(angle), 20,  20 * Math.sin(angle), 1.0);
         const light_position = vec4(20, 20,  20, 1.0);
         this.uniforms.lights = [ defs.Phong_Shader.light_source( light_position, color( 1,1,1,1 ), 1000000 ) ];
-
-
-
-
       }
     }
 
@@ -128,11 +125,6 @@ export class Project extends project_base {                                     
     const t = this.t = this.uniforms.animation_time / 1000;
 
     //draw a particle for testing
-    this.particles[0].pos = vec3(0, 0, 0);
-    this.particles[0].vel = vec3(1, 1, 1);
-    this.particles[0].acc = vec3(0, 0, 0);
-    this.particles[0].valid = true;
-
 
     let dt = this.dt = Math.min(1/30, this.uniforms.animation_delta_time / 1000);
     const t_next = this.t_sim + dt;
@@ -140,6 +132,7 @@ export class Project extends project_base {                                     
       for (let i = 0; i < 1; i++) {
         this.particles[i].update(this.time_step);
       }
+      this.t_sim += this.time_step;
     }
 
     this.particles[0].draw(caller, this.uniforms, this.shapes, this.materials);
