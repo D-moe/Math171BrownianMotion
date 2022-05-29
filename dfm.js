@@ -5,7 +5,7 @@ const {vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component} =
 export const DFM = class DFM {
   // This class will handle the params necessary for the discrete fluid model.
   // particles: Particle[], the particles to update on each step.
-  constructor(a = 2, b = 1, alpha = 2, beta = 2, eps = 10e-6) {
+  constructor(a = 2.3, b = 1.5, alpha = .6, beta = 2, eps = 10e-6) {
     this.a = a;
     this.b = b;
     this.alpha = alpha;
@@ -29,7 +29,7 @@ export const DFM = class DFM {
     const f = dir.times(m_1 * m_2 *
         (this.alpha / Math.pow(d + this.eps, this.a) -
          this.beta / (Math.pow(d + this.eps, this.b)))*d);
-    return f;
+    return f.times(1/100);
   }
   update(particles) {
     const prior_parts = Array.from(particles);
