@@ -1,6 +1,7 @@
 import {defs, tiny} from './examples/common.js';
 import {get_readers, save_to_canvas} from './image_loader.js'
 import {Particle} from './particle.js';
+import {DFM} from './dfm.js';
 
 // Pull these names into this module's scope for convenience:
 const {vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component} =
@@ -70,7 +71,9 @@ export const project_base = defs.project_base =
     //    new Particle(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1));
     this.canvas_particles = [];
     this.loaded_canvas = false;
+    this.DFM = new DFM();
   }
+
   render_animation(caller) {  // display():  Called once per frame of animation.
                               // We'll isolate out
     // the code that actually draws things into Part_one_hermite, a
@@ -209,6 +212,7 @@ export class Project extends
         const particle = this.canvas_particles[i];
         particle.draw(caller, this.uniforms, this.shapes, this.materials);
       }
+      this.DFM.update(this.canvas_particles);
 
     //this.particles[0].draw(caller, this.uniforms, this.shapes, this.materials);
   }
