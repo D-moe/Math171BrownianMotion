@@ -213,6 +213,8 @@ export class Project extends
         particle.draw(caller, this.uniforms, this.shapes, this.materials);
       }
       this.DFM.update(this.canvas_particles);
+      if(this.canvas_particles.length > 0){
+      console.log(this.canvas_particles[0]);}
 
     //this.particles[0].draw(caller, this.uniforms, this.shapes, this.materials);
   }
