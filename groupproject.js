@@ -66,8 +66,8 @@ export const project_base = defs.project_base =
     this.time_step = 0.001;
     this.t_sim = 0.0;
     this.particles = [];
-    //this.particles.push(
-    //    new Particle(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1));
+    this.particles.push(
+        new Particle(1, 0, 0, 0, -1, 0, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1));
     this.canvas_particles = [];
     this.loaded_canvas = false;
   }
@@ -97,7 +97,7 @@ export const project_base = defs.project_base =
 
       // !!! Camera changed here
       Shader.assign_camera(
-          Mat4.look_at(vec3(10, 10, 10), vec3(0, 0, 0), vec3(0, 1, 0)),
+          Mat4.look_at(vec3(15, -1, 15), vec3(-6, -7, -6), vec3(0, 1, 0)),
           this.uniforms);
     }
     this.uniforms.projection_transform =
@@ -148,9 +148,35 @@ export class Project extends
 
     // Call the setup code that we left inside the base class:
     super.render_animation(caller);
+    const white = color(1,1,1,1), blue = color(0,0,1,1);
     const t = this.t = this.uniforms.animation_time / 1000;
 
+    let floor_transform = Mat4.translation(0, -10, 0).times(Mat4.scale(10, 0.01, 10)).times(Mat4.rotation(Math.PI/4,0,1,0));
+    this.shapes.box.draw(caller, this.uniforms, floor_transform, { ...this.materials.plastic, color: white } );
+    let lwall_transform = Mat4.translation(7,-4,-7).times(Mat4.scale(1,1,1)).times(Mat4.rotation(Math.PI/4,0,1,0)).times(Mat4.scale(.01,10,10));
+    this.shapes.box.draw(caller, this.uniforms, lwall_transform, { ...this.materials.plastic, color: white } );
+    let rwall_transform = Mat4.translation(-7,-4,7).times(Mat4.scale(1,1,1)).times(Mat4.rotation(Math.PI/4,0,1,0)).times(Mat4.scale(.01,10,10));
+    this.shapes.box.draw(caller, this.uniforms, rwall_transform, { ...this.materials.plastic, color: white } );
+    let bwall_transform = Mat4.translation(-7,-4,-7).times(Mat4.scale(1,1,1)).times(Mat4.rotation(Math.PI/4,0,1,0)).times(Mat4.scale(10,10,.01));
+    this.shapes.box.draw(caller, this.uniforms, bwall_transform, { ...this.materials.plastic, color: white } );
+
+    // box for particles
+
+    let pb_left_transform = Mat4.translation(-1,-4,0).times(Mat4.scale(0.5, 5.5, 2));
+    this.shapes.box.draw(caller, this.uniforms, pb_left_transform, { ...this.materials.plastic, color: blue } );
+    let pb_bottom_transform = Mat4.translation(4.5,-10,0).times(Mat4.scale(6, 0.5, 2));
+    this.shapes.box.draw(caller, this.uniforms, pb_bottom_transform, { ...this.materials.plastic, color: blue } );
+    let pb_right_transform = Mat4.translation(10,-4,0).times(Mat4.scale(0.5, 5.5, 2));
+    this.shapes.box.draw(caller, this.uniforms, pb_right_transform, { ...this.materials.plastic, color: blue } );
+    let pb_top_transform = Mat4.translation(4.5,1,0).times(Mat4.scale(6, 0.5, 2));
+    this.shapes.box.draw(caller, this.uniforms, pb_top_transform, { ...this.materials.plastic, color: blue } );
+    let pb_back_transform = Mat4.translation(4.5,-4.5,-2).times(Mat4.scale(6, 6, 0.5));
+    this.shapes.box.draw(caller, this.uniforms, pb_back_transform, { ...this.materials.plastic, color: blue } );
     // draw a particle for testing
+    //this.particles[0].pos = vec3(1, 0, 1);
+    //this.particles[0].vel = vec3(0, 50, 0);
+    //this.particles[0].acc = vec3(1, 1, 1);
+    //this.particles[0].valid = true;
 
     let dt = this.dt =
         Math.min(1 / 30, this.uniforms.animation_delta_time / 1000);
@@ -231,7 +257,13 @@ export class Project extends
     let output = document.createElement('img');
     output.setAttribute('id', 'output');
     this.control_panel.appendChild(output);
+
+    this.new_line();
+    this.key_triggered_button( "Simulate", [], this.begin_sim );
   }
 
+  begin_sim() {
+
+  }
   // Save uploaded image to created canvas for parsing.
 }
