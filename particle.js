@@ -5,16 +5,15 @@ const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } =
 
 export const Particle =
     class Particle {
-        constructor(mass=1, posx=0, posy=0, posz=0, velx=0, vely=0,
-                    velz=0, accx = 0, accy=0, accz=0,
-                    extx=0, exty=0, extz=0,
-                    col0=0, col1=0, col2=1, col3=1) {
+        constructor(mass=1, pos = vec3(0,0,0), vel = vec3(0,0,0), acc = vec3(0,0,0),
+                    f = vec3(0,0,0),
+                    new_color = color(0,0,1,0)) {
             this.mass = mass;
-            this.pos = vec3(posx, posy, posz);
-            this.vel = vec3(velx, vely, velz);
-            this.acc = vec3(accx, accy, accz);
-            this.ext_force = vec3(extx, exty, extz);
-            this.color = color(col0, col1, col2, col3)
+            this.pos = pos
+            this.vel = vel;
+            this.acc = acc;
+            this.ext_force = f;
+            this.color = new_color;
             this.valid = true;
         }
 
@@ -49,7 +48,7 @@ export const Particle =
             const pos = this.pos;
             let model_transform = Mat4.scale(0.2, 0.2, 0.2);
             model_transform.pre_multiply(Mat4.translation(pos[0], pos[1], pos[2]));
-            console.log("color is " + this.color);
+            //console.log("color is " + this.color);
             shapes.ball.draw(webgl_manager, uniforms, model_transform, {...materials.plastic, color: this.color});
         }
     };
