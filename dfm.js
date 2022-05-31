@@ -49,17 +49,16 @@ export const DFM = class DFM {
     return f;
   }
 
-
   update(particles) {
-    const prior_parts = Array.from(particles);
+   // const prior_parts = Array.from(particles);
     console.log(particles.length);
     // Assume all other updated forces occur after this update.
     for (let i = 0; i < particles.length; i++) {
       let curr_part = particles[i];
-      curr_part.ext_force = vec3(0,0,0);
+      //curr_part.ext_force = vec3(0,0,0);
       for (let j = 0; j < particles.length; j++) {
         if (i != j){
-        let other_part = prior_parts[j];
+        let other_part = particles[j];
         const force = this.LJP(curr_part, other_part);
        // console.log('The force is');
       //  console.log(force);
