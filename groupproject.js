@@ -63,13 +63,18 @@ export const project_base = defs.project_base =
       ambient: .5,
       texture: new Texture('assets/rgb.jpg')
     };
-    this.time_step = 0.001;
+    this.time_step = 0.01;
     this.t_sim = 0.0;
     this.particles = [];
     //this.particles.push(
     //    new Particle(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1));
     this.canvas_particles = [];
+    this.canvas_newcolors = [];
     this.loaded_canvas = false;
+    this.loaded_canvas2= false;
+    this.transform_r = false;
+    this.transform_g = false;
+    this.transform_b = false;
   }
   render_animation(caller) {  // display():  Called once per frame of animation.
                               // We'll isolate out
@@ -150,14 +155,12 @@ export class Project extends
     super.render_animation(caller);
     const t = this.t = this.uniforms.animation_time / 1000;
 
-    // draw a particle for testing
-
     let dt = this.dt =
         Math.min(1 / 30, this.uniforms.animation_delta_time / 1000);
     const t_next = this.t_sim + dt;
     const readers = get_readers();
     if (this.loaded_canvas == false && readers.length >=1){
-
+      //console.log(readers[1]);
       const reader = readers[0];
       const width = reader.width;
       const height = reader.height;
@@ -174,7 +177,7 @@ export class Project extends
       for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
           // We need to create a transformation matrix for each matrix.
-          console.log("i: "+i+" j: "+j);
+          //console.log("i: "+i+" j: "+j);
           const rgb = reader.get_pixel(i,j);
           // Set the height to be negative so we build the value down.
           const x = x_offset + i*x_scale;
@@ -182,35 +185,124 @@ export class Project extends
           const z = z_offset;
           let curr_particle = new Particle();
           curr_particle.set_pos(x, y, z)
-          curr_particle.set_color(color(rgb[0]/SCALE, rgb[1]/SCALE, rgb[2]/SCALE, opacity));
+          //console.log((rgb[0]/SCALE).toFixed(3));
+          curr_particle.set_color(color((rgb[0]/SCALE), (rgb[1]/SCALE), (rgb[2]/SCALE), opacity));
+          //console.log(curr_particle.color);
           this.canvas_particles[j * height + i] = curr_particle;
         }
       }
       this.loaded_canvas = true;
+      //readers.close();
     }
-      // Update each particle using integration technique.
-      while (this.t_sim < t_next) {
-        for (let i = 0; i < this.particles.length; i++) {
-          this.particles[i].update(this.time_step);
-        }
-        for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++){
-          this.canvas_particles[i].update(this.time_step);
-        }
-        this.t_sim += this.time_step;
-      }
+
 
       // Draw all the particles in the image
-      for (let i = 0; i< this.particles.length; i++){
+      /*for (let i = 0; i< this.particles.length; i++){
         const particle = this.particles[i];
         particle.draw(caller, this.uniforms, this.shapes, this.materials);
-      }
+      }*/
 
       for (let i = 0; i< Math.min(this.canvas_particles.length, 10000); i++){
         const particle = this.canvas_particles[i];
         particle.draw(caller, this.uniforms, this.shapes, this.materials);
       }
 
-    //this.particles[0].draw(caller, this.uniforms, this.shapes, this.materials);
+    //read in pixels for second image
+    //const readers2 = get_readers();
+    if (this.loaded_canvas == true && this.loaded_canvas2 == false && readers.length >=2){
+      const reader2 = readers[1];
+
+      const width = reader2.width;
+      const height = reader2.height;
+      console.log(width);
+      const x_offset = 0;
+      const x_scale = .3;
+      const y_scale = .3;
+      const y_offset = 0;
+      const z_offset = 0;
+      const SCALE = 255;
+      this.canvas_newcolors = new Array(width * height);
+
+      for (let i = 0; i < width; i++) {
+        for (let j = 0; j < height; j++) {
+          // We need to create a transformation matrix for each matrix.
+          //console.log("i: "+i+" j: "+j);
+          const rgb = reader2.get_pixel(i,j);
+          // Set the height to be negative so we build the value down.
+          const x = x_offset + i*x_scale;
+          const y = y_offset - j*y_scale;
+          const z = z_offset;
+          let curr = new Array();
+          curr.push((rgb[0]/SCALE).toFixed(3));
+          curr.push((rgb[1]/SCALE).toFixed(3));
+          curr.push((rgb[2]/SCALE).toFixed(3));
+          this.canvas_newcolors[j * height + i] = curr;
+        }
+      }
+      this.loaded_canvas2 = true;
+    }
+
+    // Update each particle using integration technique.
+    while (this.t_sim < t_next) {
+      for (let i = 0; i < this.particles.length; i++) {
+        this.particles[i].update(this.time_step);
+      }
+      for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
+        this.canvas_particles[i].update(this.time_step);
+      }
+
+      //update particle colors
+      if (this.loaded_canvas2) {
+
+        //console.log(this.canvas_newcolors[0][0]);
+        //console.log((this.canvas_particles[0].color[0]).toFixed(3));
+        for (let i = 0; i< Math.min(this.canvas_newcolors.length, this.canvas_particles.length); i++){
+          let curr_r = (this.canvas_particles[i].color[0]).toFixed(3);
+          let curr_g = (this.canvas_particles[i].color[1]).toFixed(3);
+          let curr_b = (this.canvas_particles[i].color[2]).toFixed(3);
+          let new_r = 0;
+          let new_g = 0;
+          let new_b = 0;
+          //console.log(curr_r);
+          if (this.canvas_newcolors[i][0] > curr_r) {
+            new_r = curr_r + 0.001;
+          }
+          else if (this.canvas_newcolors[i][0] < curr_r) {
+            new_r = curr_r - 0.001;
+          }
+          else {
+            new_r = curr_r;
+            this.transform_r = true;
+          }
+
+          if (this.canvas_newcolors[i][1] > curr_g) {
+            new_g = curr_g + 0.001;
+          }
+          else if (this.canvas_newcolors[i][1] < curr_g) {
+            new_g = curr_g - 0.001;
+          }
+          else {
+            new_g = curr_g;
+            this.transform_g = true;
+          }
+
+          if (this.canvas_newcolors[i][2] > curr_b) {
+            new_b = curr_b + 0.001;
+          }
+          else if (this.canvas_newcolors[i][2] < curr_b) {
+            new_b = curr_b - 0.001;
+          }
+          else {
+            new_b = curr_b;
+            this.transform_b = true;
+          }
+          this.canvas_particles[i].set_color(color(new_r, new_g, new_b, 0.5));
+          this.canvas_particles[i].draw(caller, this.uniforms, this.shapes, this.materials);
+        }
+      }
+
+      this.t_sim += this.time_step;
+    }
   }
 
   // Render buttons, etc.
@@ -231,7 +323,18 @@ export class Project extends
     let output = document.createElement('img');
     output.setAttribute('id', 'output');
     this.control_panel.appendChild(output);
+
+    let image_upload2 = document.createElement('input');
+    image_upload2.setAttribute('type', 'file');
+    image_upload2.setAttribute('id', 'upload_image_2');
+    this.control_panel.appendChild(image_upload2);
+
+    image_upload2.addEventListener('change', save_to_canvas)
+    let output2 = document.createElement('img');
+    output2.setAttribute('id', 'output2');
+    this.control_panel.appendChild(output2);
   }
 
   // Save uploaded image to created canvas for parsing.
 }
+

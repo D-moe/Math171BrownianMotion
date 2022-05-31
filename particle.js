@@ -49,7 +49,7 @@ export const Particle =
             const pos = this.pos;
             let model_transform = Mat4.scale(0.2, 0.2, 0.2);
             model_transform.pre_multiply(Mat4.translation(pos[0], pos[1], pos[2]));
-            console.log("color is " + this.color);
+            //console.log("color is " + this.color);
             shapes.ball.draw(webgl_manager, uniforms, model_transform, {...materials.plastic, color: this.color});
         }
     };
