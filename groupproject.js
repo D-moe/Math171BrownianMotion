@@ -63,7 +63,7 @@ export const project_base = defs.project_base =
       ambient: .5,
       texture: new Texture('assets/rgb.jpg')
     };
-    this.time_step = 0.01;
+    this.time_step = 0.001;
     this.t_sim = 0.0;
     this.particles = [];
     //this.particles.push(
@@ -214,12 +214,7 @@ export class Project extends
 
       const width = reader2.width;
       const height = reader2.height;
-      console.log(width);
-      const x_offset = 0;
-      const x_scale = .3;
-      const y_scale = .3;
-      const y_offset = 0;
-      const z_offset = 0;
+      //console.log(width);
       const SCALE = 255;
       this.canvas_newcolors = new Array(width * height);
 
@@ -229,13 +224,10 @@ export class Project extends
           //console.log("i: "+i+" j: "+j);
           const rgb = reader2.get_pixel(i,j);
           // Set the height to be negative so we build the value down.
-          const x = x_offset + i*x_scale;
-          const y = y_offset - j*y_scale;
-          const z = z_offset;
           let curr = new Array();
-          curr.push((rgb[0]/SCALE).toFixed(3));
-          curr.push((rgb[1]/SCALE).toFixed(3));
-          curr.push((rgb[2]/SCALE).toFixed(3));
+          curr.push((rgb[0]/SCALE));
+          curr.push((rgb[1]/SCALE));
+          curr.push((rgb[2]/SCALE));
           this.canvas_newcolors[j * height + i] = curr;
         }
       }
@@ -253,49 +245,17 @@ export class Project extends
 
       //update particle colors
       if (this.loaded_canvas2) {
-
-        //console.log(this.canvas_newcolors[0][0]);
-        //console.log((this.canvas_particles[0].color[0]).toFixed(3));
         for (let i = 0; i< Math.min(this.canvas_newcolors.length, this.canvas_particles.length); i++){
-          let curr_r = (this.canvas_particles[i].color[0]).toFixed(3);
-          let curr_g = (this.canvas_particles[i].color[1]).toFixed(3);
-          let curr_b = (this.canvas_particles[i].color[2]).toFixed(3);
+          let curr_r = (this.canvas_particles[i].color[0]);
+          let curr_g = (this.canvas_particles[i].color[1]);
+          let curr_b = (this.canvas_particles[i].color[2]);
           let new_r = 0;
           let new_g = 0;
           let new_b = 0;
-          //console.log(curr_r);
-          if (this.canvas_newcolors[i][0] > curr_r) {
-            new_r = curr_r + 0.001;
-          }
-          else if (this.canvas_newcolors[i][0] < curr_r) {
-            new_r = curr_r - 0.001;
-          }
-          else {
-            new_r = curr_r;
-            this.transform_r = true;
-          }
+          new_r = (((Number(this.canvas_newcolors[i][0]) - Number(curr_r))*0.001) + Number(curr_r));
+          new_g = (Number(this.canvas_newcolors[i][1]) - Number(curr_g))*0.001 + Number(curr_g);
+          new_b = (Number(this.canvas_newcolors[i][2]) - Number(curr_b))*0.001 + Number(curr_b);
 
-          if (this.canvas_newcolors[i][1] > curr_g) {
-            new_g = curr_g + 0.001;
-          }
-          else if (this.canvas_newcolors[i][1] < curr_g) {
-            new_g = curr_g - 0.001;
-          }
-          else {
-            new_g = curr_g;
-            this.transform_g = true;
-          }
-
-          if (this.canvas_newcolors[i][2] > curr_b) {
-            new_b = curr_b + 0.001;
-          }
-          else if (this.canvas_newcolors[i][2] < curr_b) {
-            new_b = curr_b - 0.001;
-          }
-          else {
-            new_b = curr_b;
-            this.transform_b = true;
-          }
           this.canvas_particles[i].set_color(color(new_r, new_g, new_b, 0.5));
           this.canvas_particles[i].draw(caller, this.uniforms, this.shapes, this.materials);
         }
