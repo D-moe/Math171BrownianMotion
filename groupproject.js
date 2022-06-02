@@ -1,6 +1,7 @@
 import {defs, tiny} from './examples/common.js';
 import {get_readers, save_to_canvas} from './image_loader.js'
 import {Particle} from './particle.js';
+import {ColorInterpolation} from './colorinterpolation.js';
 
 // Pull these names into this module's scope for convenience:
 const {vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component} =
@@ -66,15 +67,12 @@ export const project_base = defs.project_base =
     this.time_step = 0.001;
     this.t_sim = 0.0;
     this.particles = [];
-    //this.particles.push(
-    //    new Particle(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1));
     this.canvas_particles = [];
     this.canvas_newcolors = [];
     this.loaded_canvas = false;
     this.loaded_canvas2= false;
-    this.transform_r = false;
-    this.transform_g = false;
-    this.transform_b = false;
+    this.colorinterpolator = new ColorInterpolation();
+
   }
   render_animation(caller) {  // display():  Called once per frame of animation.
                               // We'll isolate out
@@ -177,9 +175,7 @@ export class Project extends
           const z = z_offset;
           let curr_particle = new Particle();
           curr_particle.set_pos(x, y, z)
-          //console.log((rgb[0]/SCALE).toFixed(3));
           curr_particle.set_color(color((rgb[0]/SCALE), (rgb[1]/SCALE), (rgb[2]/SCALE), opacity));
-          //console.log(curr_particle.color);
           this.canvas_particles[j * height + i] = curr_particle;
         }
       }
@@ -200,7 +196,6 @@ export class Project extends
 
       const width = reader2.width;
       const height = reader2.height;
-      //console.log(width);
       const SCALE = 255;
       this.canvas_newcolors = new Array(width * height);
 
@@ -228,21 +223,8 @@ export class Project extends
 
       //update particle colors
       if (this.loaded_canvas2) {
-        this.update_colors(caller, 0.001);
-      /*  for (let i = 0; i< Math.min(this.canvas_newcolors.length, this.canvas_particles.length); i++){
-          let curr_r = (this.canvas_particles[i].color[0]);
-          let curr_g = (this.canvas_particles[i].color[1]);
-          let curr_b = (this.canvas_particles[i].color[2]);
-          let new_r = 0;
-          let new_g = 0;
-          let new_b = 0;
-          new_r = (((Number(this.canvas_newcolors[i][0]) - Number(curr_r))*0.001) + Number(curr_r));
-          new_g = (Number(this.canvas_newcolors[i][1]) - Number(curr_g))*0.001 + Number(curr_g);
-          new_b = (Number(this.canvas_newcolors[i][2]) - Number(curr_b))*0.001 + Number(curr_b);
-
-          this.canvas_particles[i].set_color(color(new_r, new_g, new_b, 0.5));
-          this.canvas_particles[i].draw(caller, this.uniforms, this.shapes, this.materials);
-        }*/
+        this.colorinterpolator.update_colors(0.001, this.canvas_newcolors, this.canvas_particles, caller, this.uniforms, this.shapes, this.materials);
+        //speed is a fraction between 0 and 1, smaller numbers will make the colors change slower
       }
 
       this.t_sim += this.time_step;
@@ -276,26 +258,8 @@ export class Project extends
     image_upload2.addEventListener('change', save_to_canvas)
     let output2 = document.createElement('img');
     output2.setAttribute('id', 'output2');
-    this.control_panel.appendChild(output2); 
+    this.control_panel.appendChild(output2);
   }
-
-  update_colors(caller, speed) {  //speed is a fraction between 0 and 1, smaller numbers will make the colors change slower
-    for (let i = 0; i< Math.min(this.canvas_newcolors.length, this.canvas_particles.length); i++){
-      let curr_r = (this.canvas_particles[i].color[0]);
-      let curr_g = (this.canvas_particles[i].color[1]);
-      let curr_b = (this.canvas_particles[i].color[2]);
-      let new_r = 0;
-      let new_g = 0;
-      let new_b = 0;
-      new_r = (((Number(this.canvas_newcolors[i][0]) - Number(curr_r))*speed) + Number(curr_r));
-      new_g = (Number(this.canvas_newcolors[i][1]) - Number(curr_g))*speed + Number(curr_g);
-      new_b = (Number(this.canvas_newcolors[i][2]) - Number(curr_b))*speed + Number(curr_b);
-
-      this.canvas_particles[i].set_color(color(new_r, new_g, new_b, 0.5));
-      this.canvas_particles[i].draw(caller, this.uniforms, this.shapes, this.materials);
-    }
-  }
-
 
   // Save uploaded image to created canvas for parsing.
 }
