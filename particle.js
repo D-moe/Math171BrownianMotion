@@ -54,4 +54,5 @@ export const Particle =
             //console.log("color is " + this.color);
             shapes.ball.draw(webgl_manager, uniforms, model_transform, {...materials.plastic, color: this.color});
         }
+
     };
