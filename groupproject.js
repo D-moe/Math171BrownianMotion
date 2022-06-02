@@ -126,15 +126,7 @@ export const project_base = defs.project_base =
 
 
 export class Project extends
-    project_base {  // **Part_one_hermite** is a Scene object that can be added
-                    // to any display canvas. This particular scene is broken up
-                    // into two pieces for easier understanding. See the other
-                    // piece, My_Demo_Base, if you need to see the setup code.
-                    // The piece here exposes only the display() method, which
-                    // actually places and draws the shapes.  We isolate that
-                    // code so it can be experimented with on its own. This
-                    // gives you a very small code sandbox for editing a simple
-                    // scene, and for experimenting with matrix transformations.
+    project_base {  
   render_animation(caller) {  // display():  Called once per frame of animation.
                               // For each shape that you want to
     // appear onscreen, place a .draw() call for it inside.  Each time, pass in
@@ -197,18 +189,12 @@ export class Project extends
 
 
       // Draw all the particles in the image
-      /*for (let i = 0; i< this.particles.length; i++){
-        const particle = this.particles[i];
-        particle.draw(caller, this.uniforms, this.shapes, this.materials);
-      }*/
-
-      for (let i = 0; i< Math.min(this.canvas_particles.length, 10000); i++){
+    for (let i = 0; i< Math.min(this.canvas_particles.length, 10000); i++){
         const particle = this.canvas_particles[i];
         particle.draw(caller, this.uniforms, this.shapes, this.materials);
       }
 
     //read in pixels for second image
-    //const readers2 = get_readers();
     if (this.loaded_canvas == true && this.loaded_canvas2 == false && readers.length >=2){
       const reader2 = readers[1];
 
@@ -220,10 +206,7 @@ export class Project extends
 
       for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
-          // We need to create a transformation matrix for each matrix.
-          //console.log("i: "+i+" j: "+j);
           const rgb = reader2.get_pixel(i,j);
-          // Set the height to be negative so we build the value down.
           let curr = new Array();
           curr.push((rgb[0]/SCALE));
           curr.push((rgb[1]/SCALE));
@@ -245,7 +228,8 @@ export class Project extends
 
       //update particle colors
       if (this.loaded_canvas2) {
-        for (let i = 0; i< Math.min(this.canvas_newcolors.length, this.canvas_particles.length); i++){
+        this.update_colors(caller, 0.001);
+      /*  for (let i = 0; i< Math.min(this.canvas_newcolors.length, this.canvas_particles.length); i++){
           let curr_r = (this.canvas_particles[i].color[0]);
           let curr_g = (this.canvas_particles[i].color[1]);
           let curr_b = (this.canvas_particles[i].color[2]);
@@ -258,7 +242,7 @@ export class Project extends
 
           this.canvas_particles[i].set_color(color(new_r, new_g, new_b, 0.5));
           this.canvas_particles[i].draw(caller, this.uniforms, this.shapes, this.materials);
-        }
+        }*/
       }
 
       this.t_sim += this.time_step;
@@ -292,8 +276,26 @@ export class Project extends
     image_upload2.addEventListener('change', save_to_canvas)
     let output2 = document.createElement('img');
     output2.setAttribute('id', 'output2');
-    this.control_panel.appendChild(output2);
+    this.control_panel.appendChild(output2); 
   }
+
+  update_colors(caller, speed) {  //speed is a fraction between 0 and 1, smaller numbers will make the colors change slower
+    for (let i = 0; i< Math.min(this.canvas_newcolors.length, this.canvas_particles.length); i++){
+      let curr_r = (this.canvas_particles[i].color[0]);
+      let curr_g = (this.canvas_particles[i].color[1]);
+      let curr_b = (this.canvas_particles[i].color[2]);
+      let new_r = 0;
+      let new_g = 0;
+      let new_b = 0;
+      new_r = (((Number(this.canvas_newcolors[i][0]) - Number(curr_r))*speed) + Number(curr_r));
+      new_g = (Number(this.canvas_newcolors[i][1]) - Number(curr_g))*speed + Number(curr_g);
+      new_b = (Number(this.canvas_newcolors[i][2]) - Number(curr_b))*speed + Number(curr_b);
+
+      this.canvas_particles[i].set_color(color(new_r, new_g, new_b, 0.5));
+      this.canvas_particles[i].draw(caller, this.uniforms, this.shapes, this.materials);
+    }
+  }
+
 
   // Save uploaded image to created canvas for parsing.
 }
