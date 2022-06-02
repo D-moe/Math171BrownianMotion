@@ -327,25 +327,26 @@ export class Project extends
 
       //update particle colors
       if (this.loaded_canvas2) {
-        this.colorinterpolator.update_colors(0.001, this.canvas_newcolors, this.canvas_particles, caller, this.uniforms, this.shapes, this.materials);
+        this.colorinterpolator.update_colors(0.01, this.canvas_newcolors, this.canvas_particles, caller, this.uniforms, this.shapes, this.materials);
         //speed is a fraction between 0 and 1, smaller numbers will make the colors change slower
       }
+
 
       this.t_sim += this.time_step;
     }
 
-    for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
+    /*for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
       const particle = this.canvas_particles[i];
       particle.draw(caller, this.uniforms, this.shapes, this.materials);
-    }
-    if (this.canvas_particles.length > 0) {
+    }*/
+    /*if (this.canvas_particles.length > 0) {
       console.log(this.canvas_particles[0]);
-    }
+    }*/
 
     // this.particles[0].draw(caller, this.uniforms, this.shapes,
     // this.materials);
 
-  }
+  //}
 
   // Render buttons, etc.
   render_controls() {
