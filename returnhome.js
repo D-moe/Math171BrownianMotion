@@ -35,7 +35,12 @@ export const HOME = class HOME {
             part.ext_force = P.times(1/P.norm());
             return part.ext_force;
         }
-        part.ext_force = P.times(1/(P.norm()*P.norm()));*/
+        part.ext_force = P.times(1/(P.norm()*P.norm()));
+          if(this.returnHome === true){
+        this.HOME.update(this.canvas_particles, this.time_step);
+      }
+
+        */
         return part.ext_force;
     }
     update(particles, time_step){
