@@ -1,11 +1,11 @@
 import {BBox} from './collision.js';
+import {ColorInterpolation} from './colorinterpolation.js';
+import {Curl} from './curl.js';
 import {DFM} from './dfm.js';
-import {HOME} from './returnhome.js';
 import {defs, tiny} from './examples/common.js';
 import {get_readers, save_to_canvas} from './image_loader.js'
 import {Particle} from './particle.js';
-import {Curl} from './curl.js';
-import {ColorInterpolation} from './colorinterpolation.js';
+import {HOME} from './returnhome.js';
 
 // Pull these names into this module's scope for convenience:
 const {vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component} =
@@ -72,15 +72,15 @@ export const project_base = defs.project_base =
     this.t_sim = 0.0;
     this.particles = [];
 
-    this.particles.push(new Particle(
+    /*this.particles.push(new Particle(
         1, vec3(0, 0, 0), vec3(-1, 0, -1), vec3(0, 0, 0), vec3(0, 0, 0),
         color(1, 0, 0, 1)));
-
+*/
     this.canvas_particles = [];
     this.canvas_newcolors = [];
     this.loaded_canvas = false;
 
-    this.loaded_canvas2= false;
+    this.loaded_canvas2 = false;
     this.colorinterpolator = new ColorInterpolation();
     this.returnHome = false;
 
@@ -94,6 +94,12 @@ export const project_base = defs.project_base =
     this.curl = false;
     this.fluid = false;
     this.color_interp = false;
+    this.start = undefined;
+
+    this.start_fluid = 15;
+    this.start_go_home = 20;
+    this.hasRun = false;
+    this.hasRun2 = false;
   }
 
   render_animation(caller) {  // display():  Called once per frame of animation.
@@ -145,8 +151,7 @@ export const project_base = defs.project_base =
 }
 
 
-export class Project extends
-    project_base {  
+export class Project extends project_base {
   render_animation(caller) {  // display():  Called once per frame of animation.
                               // For each shape that you want to
     // appear onscreen, place a .draw() call for it inside.  Each time, pass in
@@ -164,6 +169,11 @@ export class Project extends
     // Pass to draw().
 
     // Call the setup code that we left inside the base class:
+    console.log('Simulate: ' + this.simulate);
+    console.log('Go home: ' + this.go_home);
+    console.log('Curl: ' + this.curl);
+    console.log('Fluid: ' + this.fluid);
+    console.log('Color interp ' + this.color_interp);
     super.render_animation(caller);
     const white = color(1, 1, 1, 1), blue = color(0, 0, 1, 1);
     const t = this.t = this.uniforms.animation_time / 1000;
@@ -196,8 +206,9 @@ export class Project extends
     this.shapes.box.draw(
         caller, this.uniforms, bwall_transform,
         {...this.materials.plastic, color: white});
-    let test_transform = Mat4.translation(2, -3, 1).times(Mat4.scale(.1,.1,.1));
-    this.shapes.ball.draw(caller, this.uniforms, test_transform, {...this.materials.plastic, color:white});
+    // let test_transform = Mat4.translation(2, -3,
+    // 1).times(Mat4.scale(.1,.1,.1)); this.shapes.ball.draw(caller,
+    // this.uniforms, test_transform, {...this.materials.plastic, color:white});
     // box for particles
 
     let pb_left_transform =
@@ -255,8 +266,8 @@ export class Project extends
       for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
           // We need to create a transformation matrix for each matrix.
-          //console.log("i: "+i+" j: "+j);
-          const rgb = reader.get_pixel(i,j);
+          // console.log("i: "+i+" j: "+j);
+          const rgb = reader.get_pixel(i, j);
 
           // Set the height to be negative so we build the value down.
           const x = x_offset + i * x_scale;
@@ -264,8 +275,8 @@ export class Project extends
           const z = z_offset;
           let curr_particle = new Particle();
           curr_particle.set_pos(x, y, z);
-          if(curr_particle.init === false){
-            curr_particle.initPos = vec3(x,y,z);
+          if (curr_particle.init === false) {
+            curr_particle.initPos = vec3(x, y, z);
             curr_particle.init === true;
           }
           curr_particle.set_color(
@@ -275,19 +286,20 @@ export class Project extends
         }
       }
       this.loaded_canvas = true;
-      //readers.close();
+      // readers.close();
     }
 
 
 
-      // Draw all the particles in the image
-    for (let i = 0; i< Math.min(this.canvas_particles.length, 10000); i++){
-        const particle = this.canvas_particles[i];
-        particle.draw(caller, this.uniforms, this.shapes, this.materials);
-      }
+    // Draw all the particles in the image
+    for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
+      const particle = this.canvas_particles[i];
+      particle.draw(caller, this.uniforms, this.shapes, this.materials);
+    }
 
-    //read in pixels for second image
-    if (this.loaded_canvas == true && this.loaded_canvas2 == false && readers.length >=2){
+    // read in pixels for second image
+    if (this.loaded_canvas == true && this.loaded_canvas2 == false &&
+        readers.length >= 2) {
       const reader2 = readers[1];
 
       const width = reader2.width;
@@ -297,11 +309,11 @@ export class Project extends
 
       for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
-          const rgb = reader2.get_pixel(i,j);
+          const rgb = reader2.get_pixel(i, j);
           let curr = new Array();
-          curr.push((rgb[0]/SCALE));
-          curr.push((rgb[1]/SCALE));
-          curr.push((rgb[2]/SCALE));
+          curr.push((rgb[0] / SCALE));
+          curr.push((rgb[1] / SCALE));
+          curr.push((rgb[2] / SCALE));
           this.canvas_newcolors[j * height + i] = curr;
         }
       }
@@ -319,28 +331,71 @@ export class Project extends
         this.particles[i].update(this.time_step);
       }
 
+
+
       for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
         this.canvas_particles[i].reset_force();
       }
       this.BBox.update(this.canvas_particles);
-      if(this.fluid){
+      // Set color interp, Start with curl, then set all velocities to 0, then
+      // fluid, then return home
+      this.hasRun = false;
+      if (this.simulate) {
+        if (this.start_time == undefined) {
+          this.start_time = this.t;
+        }
+        this.color_interp = true;
+        const rel_time = this.t - this.start_time;
+        if (rel_time < this.start_fluid) {
+          this.fluid = true;
+        } else if (
+            rel_time >= this.start_fluid && rel_time < this.start_go_home) {
+          this.reset_vals();
+          // Also set all particles to velocity 0
+          if (!this.hasRun) {
+            for (let q = 0; q < this.canvas_particles.length; q++) {
+              this.canvas_particles[q].vel = vec3(0, 0, 0);
+              this.hasRun = true;
+            }
+          }
+          this.returnHome = true;
+        } else if (rel_time >= this.start_go_home) {
+          //this.reset_vals();
+          this.returnHome = false;
+          if (!this.hasRun2) {
+            for (let q = 0; q < this.canvas_particles.length; q++) {
+              this.canvas_particles[q].vel = vec3(0, 0, 0);
+              this.hasRun2 = true;
+            }
+          }
+          this.curl = true;
+        }
+      }
+
+      if (this.fluid) {
         this.DFM.update(this.canvas_particles);
       }
 
-      if(this.returnHome){
+      if (this.returnHome) {
+        if (!this.hasRun) {
+          for (let q = 0; q < this.canvas_particles.length; q++) {
+            this.canvas_particles[q].vel = vec3(0, 0, 0);
+            this.hasRun = true;
+          }
+        }
         this.HOME.update(this.canvas_particles, this.time_step);
       }
-      //this.DFM.update(this.canvas_particles);
+      // this.DFM.update(this.canvas_particles);
 
       // Pick between the different methods.
 
-      if(this.curl){
-        if(!this.Curl.init){
-          this.Curl.init_vel(this.canvas_particles);
-          this.Curl.init = true;
-        }
-      this.Curl.update(this.canvas_particles);
-    }
+      if (this.curl) {
+        /* if(!this.Curl.init){
+           this.Curl.init_vel(this.canvas_particles);
+           this.Curl.init = true;
+         }*/
+        this.Curl.update(this.canvas_particles);
+      }
 
       for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
         this.canvas_particles[i].update(this.time_step);
@@ -355,26 +410,29 @@ export class Project extends
     }
 
 
-      //update particle colors
-      if (this.loaded_canvas2 && this.color_interp) {
-        this.colorinterpolator.update_colors(0.01, this.canvas_newcolors, this.canvas_particles, caller, this.uniforms, this.shapes, this.materials);
-        //speed is a fraction between 0 and 1, smaller numbers will make the colors change slower
-      }
-
-
-      this.t_sim += this.time_step;
+    // update particle colors
+    if (this.loaded_canvas2 && this.color_interp) {
+      this.colorinterpolator.update_colors(
+          0.001, this.canvas_newcolors, this.canvas_particles, caller,
+          this.uniforms, this.shapes, this.materials);
+      // speed is a fraction between 0 and 1, smaller numbers will make the
+      // colors change slower
     }
 
-    /*for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
-      const particle = this.canvas_particles[i];
-      particle.draw(caller, this.uniforms, this.shapes, this.materials);
-    }*/
-    /*if (this.canvas_particles.length > 0) {
-      console.log(this.canvas_particles[0]);
-    }*/
 
-    // this.particles[0].draw(caller, this.uniforms, this.shapes,
-    // this.materials);
+    this.t_sim += this.time_step;
+  }
+
+  /*for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
+    const particle = this.canvas_particles[i];
+    particle.draw(caller, this.uniforms, this.shapes, this.materials);
+  }*/
+  /*if (this.canvas_particles.length > 0) {
+    console.log(this.canvas_particles[0]);
+  }*/
+
+  // this.particles[0].draw(caller, this.uniforms, this.shapes,
+  // this.materials);
 
   //}
 
@@ -419,9 +477,8 @@ export class Project extends
     this.key_triggered_button('Color Interpolate', [], this.color_int);
   }
 
-  reset_vals(){
-    this.simulate = false;
-    this.go_home = false;
+  reset_vals() {
+    this.returnHome = false;
     this.fluid = false;
     this.curl = false;
   }
@@ -434,27 +491,23 @@ export class Project extends
 
   return_to_home() {
     this.reset_vals();
+    this.simulate = false;
     this.returnHome = true;
-    //this.returnHome = !this.returnHome;
+    // this.returnHome = !this.returnHome;
   }
 
-  curl_set(){
-  this.reset_vals();
-  this.curl = true;
-  }
-
-  fluid_set(){
+  curl_set() {
     this.reset_vals();
+    this.simulate = false;
+    this.curl = true;
+  }
+
+  fluid_set() {
+    this.reset_vals();
+    this.simulate = false;
     this.fluid = true;
   }
-  color_int(){
+  color_int() {
     this.color_interp = !this.color_interp;
   }
-
-
-
-
-
-
 }
-
