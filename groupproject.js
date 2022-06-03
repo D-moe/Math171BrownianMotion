@@ -83,13 +83,17 @@ export const project_base = defs.project_base =
     this.loaded_canvas2= false;
     this.colorinterpolator = new ColorInterpolation();
     this.returnHome = false;
-    
 
 
     this.DFM = new DFM();
     this.BBox = new BBox();
     this.HOME = new HOME();
     this.Curl = new Curl(vec3(2, -3, 1));
+    this.simulate = false;
+    this.go_home = false;
+    this.curl = false;
+    this.fluid = false;
+    this.color_interp = false;
   }
 
   render_animation(caller) {  // display():  Called once per frame of animation.
@@ -319,25 +323,24 @@ export class Project extends
         this.canvas_particles[i].reset_force();
       }
       this.BBox.update(this.canvas_particles);
-      if(this.returnHome === false && this.Curl.init === false){
+      if(this.fluid){
         this.DFM.update(this.canvas_particles);
       }
-      
-      if(this.returnHome === true){
+
+      if(this.returnHome){
         this.HOME.update(this.canvas_particles, this.time_step);
       }
       //this.DFM.update(this.canvas_particles);
 
       // Pick between the different methods.
 
-
-      if(!this.Curl.init){
-        this.Curl.init_vel(this.canvas_particles);
-        this.Curl.init = true;
-      }
+      if(this.curl){
+        if(!this.Curl.init){
+          this.Curl.init_vel(this.canvas_particles);
+          this.Curl.init = true;
+        }
       this.Curl.update(this.canvas_particles);
-      //this.DFM.update(this.canvas_particles);
-     // this.BBox.update(this.canvas_particles);
+    }
 
       for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
         this.canvas_particles[i].update(this.time_step);
@@ -353,7 +356,7 @@ export class Project extends
 
 
       //update particle colors
-      if (this.loaded_canvas2) {
+      if (this.loaded_canvas2 && this.color_interp) {
         this.colorinterpolator.update_colors(0.01, this.canvas_newcolors, this.canvas_particles, caller, this.uniforms, this.shapes, this.materials);
         //speed is a fraction between 0 and 1, smaller numbers will make the colors change slower
       }
@@ -409,17 +412,49 @@ export class Project extends
     this.new_line();
     this.key_triggered_button('Return to Home', [], this.return_to_home);
     this.new_line();
-    
+    this.key_triggered_button('Curl', [], this.curl_set);
+    this.new_line();
+    this.key_triggered_button('Fluid', [], this.fluid_set);
+    this.new_line();
+    this.key_triggered_button('Color Interpolate', [], this.color_int);
+  }
+
+  reset_vals(){
+    this.simulate = false;
+    this.go_home = false;
+    this.fluid = false;
+    this.curl = false;
   }
 
   begin_sim() {
-
+    this.reset_vals();
+    this.simulate = true;
   }
-  // Save uploaded image to created canvas for parsing.
+  // Save uploaded image to createthis.curld canvas for parsing.
 
   return_to_home() {
-    //
-    this.returnHome = !this.returnHome;
+    this.reset_vals();
+    this.returnHome = true;
+    //this.returnHome = !this.returnHome;
   }
+
+  curl_set(){
+  this.reset_vals();
+  this.curl = true;
+  }
+
+  fluid_set(){
+    this.reset_vals();
+    this.fluid = true;
+  }
+  color_int(){
+    this.color_interp = !this.color_interp;
+  }
+
+
+
+
+
+
 }
 
