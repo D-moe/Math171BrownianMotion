@@ -3,6 +3,7 @@ import {DFM} from './dfm.js';
 import {defs, tiny} from './examples/common.js';
 import {get_readers, save_to_canvas} from './image_loader.js'
 import {Particle} from './particle.js';
+import {Curl} from './curl.js';
 import {ColorInterpolation} from './colorinterpolation.js';
 
 // Pull these names into this module's scope for convenience:
@@ -84,7 +85,7 @@ export const project_base = defs.project_base =
 
     this.DFM = new DFM();
     this.BBox = new BBox();
-
+    this.Curl = new Curl(vec3(2, -3, 1));
   }
 
   render_animation(caller) {  // display():  Called once per frame of animation.
@@ -187,7 +188,8 @@ export class Project extends
     this.shapes.box.draw(
         caller, this.uniforms, bwall_transform,
         {...this.materials.plastic, color: white});
-
+    let test_transform = Mat4.translation(2, -3, 1).times(Mat4.scale(.1,.1,.1));
+    this.shapes.ball.draw(caller, this.uniforms, test_transform, {...this.materials.plastic, color:white});
     // box for particles
 
     let pb_left_transform =
@@ -228,6 +230,7 @@ export class Project extends
     const readers = get_readers();
 
     if (this.loaded_canvas == false && readers.length >= 1) {
+      // Load the given canvas
       const reader = readers[0];
       const width = reader.width;
       const height = reader.height;
@@ -309,7 +312,17 @@ export class Project extends
         this.canvas_particles[i].reset_force();
       }
       this.BBox.update(this.canvas_particles);
-      this.DFM.update(this.canvas_particles);
+      //this.DFM.update(this.canvas_particles);
+
+      // Pick between the different methods.
+
+
+      if(!this.Curl.init){
+        this.Curl.init_vel(this.canvas_particles);
+        this.Curl.init = true;
+      }
+      this.Curl.update(this.canvas_particles);
+      //this.DFM.update(this.canvas_particles);
      // this.BBox.update(this.canvas_particles);
 
       for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
@@ -382,7 +395,9 @@ export class Project extends
 
   }
 
-  begin_sim() {}
+  begin_sim() {
+
+  }
   // Save uploaded image to created canvas for parsing.
 }
 
