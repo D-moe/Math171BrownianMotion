@@ -4,6 +4,7 @@ import {defs, tiny} from './examples/common.js';
 import {get_readers, save_to_canvas} from './image_loader.js'
 import {Particle} from './particle.js';
 import {Curl} from './curl.js';
+import {ColorInterpolation} from './colorinterpolation.js';
 
 // Pull these names into this module's scope for convenience:
 const {vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component} =
@@ -69,11 +70,19 @@ export const project_base = defs.project_base =
     this.time_step = 0.001;
     this.t_sim = 0.0;
     this.particles = [];
+
     this.particles.push(new Particle(
         1, vec3(0, 0, 0), vec3(-1, 0, -1), vec3(0, 0, 0), vec3(0, 0, 0),
         color(1, 0, 0, 1)));
+
     this.canvas_particles = [];
+    this.canvas_newcolors = [];
     this.loaded_canvas = false;
+
+    this.loaded_canvas2= false;
+    this.colorinterpolator = new ColorInterpolation();
+
+
     this.DFM = new DFM();
     this.BBox = new BBox();
     this.Curl = new Curl(vec3(2, -3, 1));
@@ -129,15 +138,7 @@ export const project_base = defs.project_base =
 
 
 export class Project extends
-    project_base {  // **Part_one_hermite** is a Scene object that can be added
-                    // to any display canvas. This particular scene is broken up
-                    // into two pieces for easier understanding. See the other
-                    // piece, My_Demo_Base, if you need to see the setup code.
-                    // The piece here exposes only the display() method, which
-                    // actually places and draws the shapes.  We isolate that
-                    // code so it can be experimented with on its own. This
-                    // gives you a very small code sandbox for editing a simple
-                    // scene, and for experimenting with matrix transformations.
+    project_base {  
   render_animation(caller) {  // display():  Called once per frame of animation.
                               // For each shape that you want to
     // appear onscreen, place a .draw() call for it inside.  Each time, pass in
@@ -158,6 +159,7 @@ export class Project extends
     super.render_animation(caller);
     const white = color(1, 1, 1, 1), blue = color(0, 0, 1, 1);
     const t = this.t = this.uniforms.animation_time / 1000;
+
 
     let floor_transform = Mat4.translation(0, -10, 0)
                               .times(Mat4.scale(10, 0.01, 10))
@@ -221,11 +223,14 @@ export class Project extends
     // this.particles[0].acc = vec3(1, 1, 1);
     // this.particles[0].valid = true;
 
+
     let dt = this.dt =
         Math.min(1 / 30, this.uniforms.animation_delta_time / 1000);
     const t_next = this.t_sim + dt;
     const readers = get_readers();
+
     if (this.loaded_canvas == false && readers.length >= 1) {
+      // Load the given canvas
       const reader = readers[0];
       const width = reader.width;
       const height = reader.height;
@@ -242,21 +247,56 @@ export class Project extends
       for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
           // We need to create a transformation matrix for each matrix.
-          console.log('i: ' + i + ' j: ' + j);
-          const rgb = reader.get_pixel(i, j);
+          //console.log("i: "+i+" j: "+j);
+          const rgb = reader.get_pixel(i,j);
+
           // Set the height to be negative so we build the value down.
           const x = x_offset + i * x_scale;
           const y = y_offset - j * y_scale;
           const z = z_offset;
           let curr_particle = new Particle();
           curr_particle.set_pos(x, y, z)
+
           curr_particle.set_color(
               color(rgb[0] / SCALE, rgb[1] / SCALE, rgb[2] / SCALE, opacity));
+
           this.canvas_particles[j * height + i] = curr_particle;
         }
       }
       this.loaded_canvas = true;
+      //readers.close();
     }
+
+
+
+      // Draw all the particles in the image
+    for (let i = 0; i< Math.min(this.canvas_particles.length, 10000); i++){
+        const particle = this.canvas_particles[i];
+        particle.draw(caller, this.uniforms, this.shapes, this.materials);
+      }
+
+    //read in pixels for second image
+    if (this.loaded_canvas == true && this.loaded_canvas2 == false && readers.length >=2){
+      const reader2 = readers[1];
+
+      const width = reader2.width;
+      const height = reader2.height;
+      const SCALE = 255;
+      this.canvas_newcolors = new Array(width * height);
+
+      for (let i = 0; i < width; i++) {
+        for (let j = 0; j < height; j++) {
+          const rgb = reader2.get_pixel(i,j);
+          let curr = new Array();
+          curr.push((rgb[0]/SCALE));
+          curr.push((rgb[1]/SCALE));
+          curr.push((rgb[2]/SCALE));
+          this.canvas_newcolors[j * height + i] = curr;
+        }
+      }
+      this.loaded_canvas2 = true;
+    }
+
     // Update each particle using integration technique.
     while (this.t_sim < t_next) {
       for (let i = 0; i < this.particles.length; i++) {
@@ -273,6 +313,10 @@ export class Project extends
       }
       this.BBox.update(this.canvas_particles);
       //this.DFM.update(this.canvas_particles);
+
+      // Pick between the different methods.
+
+
       if(!this.Curl.init){
         this.Curl.init_vel(this.canvas_particles);
         this.Curl.init = true;
@@ -280,6 +324,7 @@ export class Project extends
       this.Curl.update(this.canvas_particles);
       //this.DFM.update(this.canvas_particles);
      // this.BBox.update(this.canvas_particles);
+
       for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
         this.canvas_particles[i].update(this.time_step);
       }
@@ -292,17 +337,29 @@ export class Project extends
       particle.draw(caller, this.uniforms, this.shapes, this.materials);
     }
 
-    for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
+
+      //update particle colors
+      if (this.loaded_canvas2) {
+        this.colorinterpolator.update_colors(0.01, this.canvas_newcolors, this.canvas_particles, caller, this.uniforms, this.shapes, this.materials);
+        //speed is a fraction between 0 and 1, smaller numbers will make the colors change slower
+      }
+
+
+      this.t_sim += this.time_step;
+    }
+
+    /*for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
       const particle = this.canvas_particles[i];
       particle.draw(caller, this.uniforms, this.shapes, this.materials);
-    }
-    if (this.canvas_particles.length > 0) {
+    }*/
+    /*if (this.canvas_particles.length > 0) {
       console.log(this.canvas_particles[0]);
-    }
+    }*/
 
     // this.particles[0].draw(caller, this.uniforms, this.shapes,
     // this.materials);
-  }
+
+  //}
 
   // Render buttons, etc.
   render_controls() {
@@ -323,10 +380,24 @@ export class Project extends
     output.setAttribute('id', 'output');
     this.control_panel.appendChild(output);
 
+    let image_upload2 = document.createElement('input');
+    image_upload2.setAttribute('type', 'file');
+    image_upload2.setAttribute('id', 'upload_image_2');
+    this.control_panel.appendChild(image_upload2);
+
+    image_upload2.addEventListener('change', save_to_canvas)
+    let output2 = document.createElement('img');
+    output2.setAttribute('id', 'output2');
+    this.control_panel.appendChild(output2);
+
     this.new_line();
     this.key_triggered_button('Simulate', [], this.begin_sim);
+
   }
 
-  begin_sim() {}
+  begin_sim() {
+
+  }
   // Save uploaded image to created canvas for parsing.
 }
+
