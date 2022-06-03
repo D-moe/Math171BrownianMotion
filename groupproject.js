@@ -1,5 +1,6 @@
 import {BBox} from './collision.js';
 import {DFM} from './dfm.js';
+import {HOME} from './returnhome.js';
 import {defs, tiny} from './examples/common.js';
 import {get_readers, save_to_canvas} from './image_loader.js'
 import {Particle} from './particle.js';
@@ -75,6 +76,8 @@ export const project_base = defs.project_base =
     this.loaded_canvas = false;
     this.DFM = new DFM();
     this.BBox = new BBox();
+    this.HOME = new HOME();
+    this.returnHome = false;
   }
 
   render_animation(caller) {  // display():  Called once per frame of animation.
@@ -246,7 +249,11 @@ export class Project extends
           const y = y_offset - j * y_scale;
           const z = z_offset;
           let curr_particle = new Particle();
-          curr_particle.set_pos(x, y, z)
+          curr_particle.set_pos(x, y, z);
+          if(curr_particle.init === false){
+            curr_particle.initPos = vec3(x,y,z);
+            curr_particle.init === true;
+          }
           curr_particle.set_color(
               color(rgb[0] / SCALE, rgb[1] / SCALE, rgb[2] / SCALE, opacity));
           this.canvas_particles[j * height + i] = curr_particle;
@@ -270,6 +277,9 @@ export class Project extends
       }
       this.BBox.update(this.canvas_particles);
       this.DFM.update(this.canvas_particles);
+      if(this.returnHome === true){
+        this.HOME.update(this.canvas_particles, this.time_step);
+      }
      // this.BBox.update(this.canvas_particles);
       for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
         this.canvas_particles[i].update(this.time_step);
@@ -316,8 +326,17 @@ export class Project extends
 
     this.new_line();
     this.key_triggered_button('Simulate', [], this.begin_sim);
+    this.new_line();
+    this.key_triggered_button('Return to Home', [], this.return_to_home);
+    this.new_line();
+    
   }
 
   begin_sim() {}
   // Save uploaded image to created canvas for parsing.
+
+  return_to_home() {
+    //
+    this.returnHome = !this.returnHome;
+  }
 }

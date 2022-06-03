@@ -15,6 +15,8 @@ export const Particle =
             this.ext_force = f;
             this.color = new_color;
             this.valid = true;
+            this.init = false;
+            this.initPos = vec3(null,null,null);
             //this.g_acc = vec3(0,9.8,0);
         }
         reset_force(){
