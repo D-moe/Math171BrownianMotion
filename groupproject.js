@@ -319,7 +319,7 @@ export class Project extends
         this.canvas_particles[i].reset_force();
       }
       this.BBox.update(this.canvas_particles);
-      if(this.returnHome === false){
+      if(this.returnHome === false && this.Curl.init === false){
         this.DFM.update(this.canvas_particles);
       }
       
