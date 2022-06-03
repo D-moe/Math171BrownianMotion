@@ -81,16 +81,13 @@ export const project_base = defs.project_base =
 
     this.loaded_canvas2= false;
     this.colorinterpolator = new ColorInterpolation();
+    this.returnHome = false;
+    
 
 
     this.DFM = new DFM();
     this.BBox = new BBox();
-<<<<<<< HEAD
     this.HOME = new HOME();
-    this.returnHome = false;
-=======
-
->>>>>>> 04a3099ea758cfb63adea347ed058ce565bfc83a
   }
 
   render_animation(caller) {  // display():  Called once per frame of animation.
@@ -258,16 +255,11 @@ export class Project extends
           const y = y_offset - j * y_scale;
           const z = z_offset;
           let curr_particle = new Particle();
-<<<<<<< HEAD
           curr_particle.set_pos(x, y, z);
           if(curr_particle.init === false){
             curr_particle.initPos = vec3(x,y,z);
             curr_particle.init === true;
           }
-=======
-          curr_particle.set_pos(x, y, z)
-
->>>>>>> 04a3099ea758cfb63adea347ed058ce565bfc83a
           curr_particle.set_color(
               color(rgb[0] / SCALE, rgb[1] / SCALE, rgb[2] / SCALE, opacity));
 
@@ -323,7 +315,10 @@ export class Project extends
         this.canvas_particles[i].reset_force();
       }
       this.BBox.update(this.canvas_particles);
-      this.DFM.update(this.canvas_particles);
+      if(this.returnHome === false){
+        this.DFM.update(this.canvas_particles);
+      }
+      
       if(this.returnHome === true){
         this.HOME.update(this.canvas_particles, this.time_step);
       }
@@ -396,14 +391,10 @@ export class Project extends
 
     this.new_line();
     this.key_triggered_button('Simulate', [], this.begin_sim);
-<<<<<<< HEAD
     this.new_line();
     this.key_triggered_button('Return to Home', [], this.return_to_home);
     this.new_line();
     
-=======
-
->>>>>>> 04a3099ea758cfb63adea347ed058ce565bfc83a
   }
 
   begin_sim() {}
