@@ -1,3 +1,4 @@
+import {BrownianMotion} from './brownian_motion.js';
 import {BBox} from './collision.js';
 import {ColorInterpolation} from './colorinterpolation.js';
 import {Curl} from './curl.js';
@@ -89,11 +90,14 @@ export const project_base = defs.project_base =
     this.BBox = new BBox();
     this.HOME = new HOME();
     this.Curl = new Curl(vec3(2, -3, 1));
+    this.Brownian = new BrownianMotion();
     this.simulate = false;
     this.go_home = false;
     this.curl = false;
     this.fluid = false;
     this.color_interp = false;
+    this.brownian = false;
+    this.collision = false;
     this.start = undefined;
 
     this.start_fluid = 15;
@@ -325,7 +329,9 @@ export class Project extends project_base {
       for (let i = 0; i < this.particles.length; i++) {
         this.particles[i].reset_force();
       }
-      this.BBox.update(this.particles);
+      if (this.collision) {
+        this.BBox.update(this.particles);
+      }
 
       for (let i = 0; i < this.particles.length; i++) {
         this.particles[i].update(this.time_step);
@@ -336,7 +342,9 @@ export class Project extends project_base {
       for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
         this.canvas_particles[i].reset_force();
       }
+      if(this.collision){
       this.BBox.update(this.canvas_particles);
+      }
       // Set color interp, Start with curl, then set all velocities to 0, then
       // fluid, then return home
       this.hasRun = false;
@@ -360,7 +368,7 @@ export class Project extends project_base {
           }
           this.returnHome = true;
         } else if (rel_time >= this.start_go_home) {
-          //this.reset_vals();
+          // this.reset_vals();
           this.returnHome = false;
           if (!this.hasRun2) {
             for (let q = 0; q < this.canvas_particles.length; q++) {
@@ -395,6 +403,10 @@ export class Project extends project_base {
            this.Curl.init = true;
          }*/
         this.Curl.update(this.canvas_particles);
+      }
+
+      if (this.brownian) {
+        this.Brownian.update(this.canvas_particles);
       }
 
       for (let i = 0; i < Math.min(this.canvas_particles.length, 10000); i++) {
@@ -475,6 +487,8 @@ export class Project extends project_base {
     this.key_triggered_button('Fluid', [], this.fluid_set);
     this.new_line();
     this.key_triggered_button('Color Interpolate', [], this.color_int);
+    this.new_line();
+    this.key_triggered_button('Brownian Motion', [], this.brownian_motion_set);
   }
 
   reset_vals() {
@@ -506,6 +520,11 @@ export class Project extends project_base {
     this.reset_vals();
     this.simulate = false;
     this.fluid = true;
+  }
+  brownian_motion_set() {
+    this.reset_vals();
+    this.simulate = false;
+    this.brownian = true;
   }
   color_int() {
     this.color_interp = !this.color_interp;
